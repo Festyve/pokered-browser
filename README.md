@@ -2,8 +2,6 @@
 
 [Play the public build](https://festyve.github.io/pokered-browser/).
 
-An editable JavaScript reconstruction of Pokémon Red, using original data and assets from [pret/pokered](https://github.com/pret/pokered). Build 0.2 adds the main campaign events through the League, but **is not the complete original game or a verified 1:1 port**. No ROM, Game Boy CPU interpreter, emulator, or WebAssembly core runs in the browser.
-
 ## Run and modify
 
 ```sh
