@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {rng,makeMon,useMove,clearVolatile,damage,addExperience,experience} from '../dist/js/mechanics.js';
+const db=JSON.parse(readFileSync(new URL('../dist/data/pokemon.json',import.meta.url)));
+const pair=()=>[makeMon(db,'MEW',40,rng(1)),makeMon(db,'SNORLAX',40,rng(2))];
+const move=(mon,id)=>mon.moves=[{id,pp:db.moves[id].pp}];
+const hit={int:n=>n===256?100:0};
+test('two-turn moves consume PP once and strike after charging',()=>{const [a,d]=pair();move(a,'SOLARBEAM');const hp=d.hp;useMove(db,a,d,0,hit);assert.equal(d.hp,hp);assert.ok(a.charging);assert.equal(a.moves[0].pp,9);useMove(db,a,d,0,hit);assert.ok(d.hp<hp);assert.equal(a.moves[0].pp,9);assert.equal(a.charging,undefined);});
+test('Substitute absorbs damage before the real HP bar',()=>{const [a,d]=pair();move(d,'SUBSTITUTE');useMove(db,d,a,0,hit);const hp=d.hp;move(a,'POUND');useMove(db,a,d,0,hit);assert.equal(d.hp,hp);assert.ok(d.substitute>=0);});
+test('Reflect reduces physical damage and expires with volatile battle state',()=>{const [a,d]=pair(),m={...db.moves.POUND,id:'POUND'};const baseline=damage(db,a,d,m,hit).amount;move(d,'REFLECT');useMove(db,d,a,0,hit);assert.ok(damage(db,a,d,m,hit).amount<baseline);clearVolatile(d);assert.equal(damage(db,a,d,m,hit).amount,baseline);});
+test('Transform copies battle attributes without permanently replacing the Pokémon',()=>{const [a,d]=pair(),original=structuredClone(a);move(a,'TRANSFORM');const before=structuredClone(a);useMove(db,a,d,0,hit);assert.equal(a.species,d.species);assert.ok(a.moves.every(m=>m.pp===5));clearVolatile(a);assert.equal(a.species,original.species);assert.equal(a.stats.hp,original.stats.hp);assert.equal(a.moves[0].id,'TRANSFORM');assert.equal(a.moves[0].pp,before.moves[0].pp-1);});
+test('status immunities and Dream Eater failure do not silently damage the opponent',()=>{const a=makeMon(db,'MEW',30,rng(1)),d=makeMon(db,'NIDORINO',30,rng(2));move(a,'POISONPOWDER');useMove(db,a,d,0,hit);assert.equal(d.status,null);move(a,'DREAM_EATER');const hp=d.hp;assert.ok(useMove(db,a,d,0,hit).includes('But it failed!'));assert.equal(d.hp,hp);});
+test('all 165 moves execute without untranslated effects or invalid HP',()=>{for(const id of Object.keys(db.moves)){const [a,d]=pair();move(a,id);const logs=useMove(db,a,d,0,rng(12));assert.ok(logs.length,id);assert.ok(!logs.some(x=>x.includes('not yet translated')),id);for(const mon of [a,d])assert.ok(Number.isFinite(mon.hp)&&mon.hp>=0&&mon.hp<=mon.stats.hp,id);}});
+test('learning a fifth move is deferred without deleting an existing move',()=>{const mon=makeMon(db,'CHARMANDER',14,rng(1)),before=mon.moves.map(m=>m.id);mon.exp=experience(15,db.species.CHARMANDER.growth)-1;addExperience(db,mon,makeMon(db,'CHANSEY',10,rng(2)),true,true);assert.deepEqual(mon.moves.map(m=>m.id),before);assert.ok(mon.pendingMoves.includes('LEER'));});

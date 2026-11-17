@@ -11,7 +11,7 @@ ap=argparse.ArgumentParser()
 ap.add_argument('source', type=Path)
 ap.add_argument('--output',type=Path,default=Path(__file__).resolve().parents[1]/'dist')
 args=ap.parse_args(); src=args.source.resolve(); out=args.output.resolve()
-for part in ['data','assets/maps','assets/sprites','assets/pokemon/front','assets/pokemon/back','assets/trainers','assets/font']:
+for part in ['data','assets/maps','assets/sprites','assets/pokemon/front','assets/pokemon/back','assets/trainers','assets/font','assets/tilesets']:
     (out/part).mkdir(parents=True,exist_ok=True)
 
 def read(path): return (src/path).read_text()
@@ -119,7 +119,23 @@ for i,m in enumerate(re.finditer(r'^\s*tileset (\w+),\s*([^\n]+)',read('data/til
 mapconst={m[1]:(int(m[2]),int(m[3])) for m in re.finditer(r'^\s*map_const (\w+),\s*(\d+),\s*(\d+)',read('constants/map_constants.asm'),re.M)}
 maporder=list(mapconst)
 mapblocks=includes('maps.asm')
-world={'maps':{},'sprites':{},'texts':alltexts}
+world={'maps':{},'sprites':{},'texts':alltexts,'tilesets':{}}
+for ident,tileset in tilesets.items():
+    assert len(tileset['blocks'])%16==0,(ident,len(tileset['blocks']))
+    count=len(tileset['blocks'])//16
+    atlas=Image.new('RGB',(16*32,((count+15)//16)*32),(255,255,255)); descriptors=[]
+    for block_id in range(count):
+        block=tileset['blocks'][block_id*16:block_id*16+16]
+        for iy in range(4):
+            for ix in range(4):
+                tile_id=block[iy*4+ix]
+                if tile_id<len(tileset['tiles']):atlas.paste(tileset['tiles'][tile_id],((block_id%16)*32+ix*8,(block_id//16)*32+iy*8))
+        ids=[[block[(iy*2+1)*4+ix*2] for ix in range(2)] for iy in range(2)]
+        collisions=[[2 if t==tileset['grass'] and t>=0 else 1 if t in tileset['coll'] else 3 if t==0x14 else 0 for t in row] for row in ids]
+        descriptors.append({'collision':collisions,'tileIds':ids})
+    atlas_path='assets/tilesets/'+ident+'.png';atlas.save(out/atlas_path,optimize=True)
+    world['tilesets'][ident]={'blockAtlas':atlas_path,'columns':16,'blocks':descriptors}
+
 toggles={name: state=='OFF' for name,state in re.findall(r'toggle_object_state (\w+),\s*(ON|OFF)',read('data/maps/toggleable_objects.asm'))}
 for p in sorted((src/'data/maps/headers').glob('*.asm')):
     header=p.read_text(); m=re.search(r'map_header (\w+),\s*(\w+),\s*(\w+)',header)
@@ -193,7 +209,7 @@ for p in sorted((src/'data/maps/headers').glob('*.asm')):
         # Warps take precedence over static collision, including gate top doors.
         if 0 <= warp['y'] < h and 0 <= warp['x'] < w:collisions[warp['y']][warp['x']]=1
     connections=[{'direction':a,'target':b,'offset':int(c)} for a,b,c in re.findall(r'connection (\w+),\s*\w+,\s*(\w+),\s*(-?\d+)',header)]
-    world['maps'][ident]={'id':ident,'name':name,'outdoor':maporder.index(ident)<37,'displayName':re.sub(r'(?<=[a-z])(?=[A-Z0-9])',' ',name),'width':w,'height':h,'image':imgpath,'borderImage':borderpath,'borderBlock':border_index,'tileset':ts,'collision':collisions,'tileIds':ids,'warps':warps,'objects':objects,'signs':signs,'connections':connections}
+    world['maps'][ident]={'id':ident,'name':name,'outdoor':maporder.index(ident)<37,'displayName':re.sub(r'(?<=[a-z])(?=[A-Z0-9])',' ',name),'width':w,'height':h,'image':imgpath,'borderImage':borderpath,'borderBlock':border_index,'tileset':ts,'blocks':[list(blockdata[y*bw:(y+1)*bw]) for y in range(bh)],'collision':collisions,'tileIds':ids,'warps':warps,'objects':objects,'signs':signs,'connections':connections}
 
 spritesinc=includes('gfx/sprites.asm')
 for m in re.finditer(r'overworld_sprite (\w+),[^\n;]+;\s*(SPRITE_\w+)',read('data/sprites/sprites.asm')):
@@ -276,6 +292,9 @@ assert len(pokemon['species'])==151
 assert len(pokemon['moves'])==165
 assert len(world['maps'])==223
 for ident,m in world['maps'].items():
+    assert len(m['blocks'])==m['height']//2
+    assert all(len(row)==m['width']//2 for row in m['blocks'])
+    assert all(0<=block<len(world['tilesets'][m['tileset']]['blocks']) for row in m['blocks'] for block in row)
     assert len(m['collision'])==m['height']
     assert all(len(r)==m['width'] for r in m['collision'])
     for obj in m['objects']:assert obj['sprite'] in world['sprites'],obj

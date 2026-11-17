@@ -1,1 +1,11 @@
-{"name":"pokered-browser-rewrite","version":"0.1.0","private":true,"type":"module","scripts":{"start":"python3 -m http.server 4173 --directory dist","test":"node --test tests/*.test.mjs"}}
+{
+  "name": "pokered-browser-rewrite",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 4173 --directory dist",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser-flow.mjs"
+  }
+}
