@@ -28,18 +28,6 @@ The Workbench supports local species edits, map exploration and test party addit
 
 ## Changes in 0.2
 
-- Movement commits once per tile, interpolates the camera with the player, buffers the next direction, handles uppercase WASD, and clears stale input on blur. Holding a direction continues across route connections.
-- Dialogue retains authored lines, reveals progressively and requires a fresh confirmation. Protected text adds a short pause after reveal; it is configurable. Oak's introduction, escort, starters and parcel scene now use the original longer dialogue.
-- Encounter wipes, sprite entrances, move effects, hit flashes, HP interpolation, fainting, capture, switching and evolution sequences replace instant changes. The animations are newly implemented approximations, not original frame scripts.
-- Original music compositions are translated to note data and synthesized with Web Audio. Music follows locations, battles, healing and the ending. Hardware envelopes, vibrato, SFX and cries are not fully reproduced.
-- All eight gym leader teams, badge/TM awards, later rival encounters, Elite Four and the Hall of Fame sequence are connected. Brock no longer ends the story.
-- Quest handlers cover Bill and his PC, S.S. Ticket and CUT, bicycle voucher, Rocket Hideout and Silph Scope, Marowak/Fuji/Flute/Snorlax, Silph Co./Master Ball, Safari SURF/Gold Teeth/STRENGTH, FLY and the Secret Key.
-- Field systems cover HM teaching and badge requirements, CUT, SURF, STRENGTH, FLY, FLASH, block-changing doors, card keys, elevators, spinner paths, Vermilion switches, Cinnabar quizzes, Mansion switches, boulder switches and falls.
-- Party systems include PC deposit/withdraw, level and stone evolution, move-replacement choices, expanded items and original shop inventories. Capture beyond a full party goes to the storage box.
-- Battle effects now have handlers for charging, recharge, confusion, Disable, screens, Substitute, Bide, Transform, Mimic, Metronome, Mirror Move, trapping and additional status effects. Their presence is not a guarantee of original bug or timing parity.
-
-Imported data includes 223 maps, 151 species, 165 moves, 391 trainer parties and 72 character sprite sheets. Counts describe data coverage, not gameplay equivalence.
-
 ## Saves and publication
 
 Save key: `pokered-browser-save-v1`; mod key: `pokered-browser-mods-v1`; options key: `pokered-settings-v2`. Older browser saves receive default campaign fields on load. Export a save before experimenting. Original cartridge `.sav` files are not compatible.
@@ -70,8 +58,5 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-28 unit tests cover data integrity, movement, dialogue pacing, HP interpolation, reward idempotence, all gym teams, original text references, dynamic collision, visibility, music assignments, navigation, stats and representative move effects. Browser fixture checks cover Oak's walking scene, starter choice, a real battle turn and animation, all gym battle starts/rewards, Bill's ticket, CUT save/reload, HM teaching, PC storage, evolution, quiz/Card Key doors, and the Hall of Fame return. Fixture checks deliberately jump between scenarios; they are **not an uninterrupted start-to-finish playthrough**. Browser tests inject test hooks only into the isolated test response, never into the shipped game.
 
-Still incomplete: optional events and some conditional dialogue, in-game trades/link features, casino games, fossil revival and other side activities, NPC wandering, Seafoam currents, exact Safari/fishing rules, capture probability, trainer AI and item use, experience sharing, battle quirks, original animation choreography and hardware audio/timing. Level/stone evolution is implemented; trade evolution is not. Only the active Pokémon receives battle experience. Initial player/rival names remain RED/BLUE. A differential input/state/frame harness against the original is still needed before calling this 1:1.
-
-Original game, artwork and characters belong to their respective owners. Source provenance is recorded in `dist/data/provenance.json` and the imported datasets. No ownership or license over the original assets is claimed.
+Still incomplete: optional events and some conditional dialogue, in-game trades/link features, casino games, fossil revival and other side activities, NPC wandering, Seafoam currents, exact Safari/fishing rules, capture probability, trainer AI and item use, experience sharing, battle quirks, original animation choreography and hardware audio/timing. Level/stone evolution is implemented; trade evolution is not. Only the active Pokémon receives battle experience. Initial player/rival names remain RED/BLUE. 
